@@ -1,8 +1,12 @@
-/** @type {import('postcss-load-config').Config} */
-const config = {
+const path = require('path');
+
+/** @type {import('postcss').Config} */
+module.exports = {
   plugins: {
-    tailwindcss: {},
+    'tailwindcss/nesting': {},
+    tailwindcss: {
+      config: path.resolve(__dirname, './tailwind.config.ts'),
+    },
+    autoprefixer: {},
   },
 };
-
-export default config;
