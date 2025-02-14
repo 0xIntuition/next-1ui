@@ -1,4 +1,4 @@
-import { Providers } from '@/app/components/providers';
+import { Providers } from '@/app/providers';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
