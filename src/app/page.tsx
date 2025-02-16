@@ -1,6 +1,10 @@
 'use client';
 
-import { Badge, Button, Text } from '@0xintuition/1ui';
+import { Badge, Button, Text, PositionCard, PositionCardOwnership, PieChartVariant, PositionCardFeesAccrued, PositionCardStaked, PositionCardLastUpdated } from '@0xintuition/1ui';
+
+const handleSell = () => {
+  console.log('Redeem button clicked...')
+}
 
 export default function Home() {
   return (
@@ -30,6 +34,15 @@ export default function Home() {
       <Badge variant="success">1ui Badge Component</Badge>
       <Badge variant="warning">1ui Badge Component</Badge>
       <Badge variant="info">1ui Badge Component</Badge>
+      <PositionCard onButtonClick={handleSell}>
+        <PositionCardStaked amount={0.420} />
+        <PositionCardOwnership
+          percentOwnership={24}
+          variant={PieChartVariant.default}
+        />
+        <PositionCardFeesAccrued amount={0.069} />
+        <PositionCardLastUpdated timestamp="2024-04-20T11:34:59Z" />
+      </PositionCard>
     </div>
   );
 }
