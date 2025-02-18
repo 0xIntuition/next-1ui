@@ -1,6 +1,16 @@
-'use client';
+'use client'
 
-import { Badge, Button, Text, PositionCard, PositionCardOwnership, PieChartVariant, PositionCardFeesAccrued, PositionCardStaked, PositionCardLastUpdated } from '@0xintuition/1ui';
+import {
+  Badge,
+  Button,
+  Text,
+  PositionCard,
+  PositionCardOwnership,
+  PieChartVariant,
+  PositionCardFeesAccrued,
+  PositionCardStaked,
+  PositionCardLastUpdated,
+} from '@0xintuition/1ui'
 
 const handleSell = () => {
   console.log('Redeem button clicked...')
@@ -9,9 +19,7 @@ const handleSell = () => {
 export default function Home() {
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold mb-4">
-        Welcome to Intuition Next.js Template
-      </h1>
+      <h1 className="text-4xl font-bold mb-4">Welcome to Intuition Next.js Template</h1>
       <p className="mb-4">This template is set up with:</p>
       <ul className="list-disc list-inside mb-4">
         <li>Next.js 14</li>
@@ -35,14 +43,11 @@ export default function Home() {
       <Badge variant="warning">1ui Badge Component</Badge>
       <Badge variant="info">1ui Badge Component</Badge>
       <PositionCard onButtonClick={handleSell}>
-        <PositionCardStaked amount={0.420} />
-        <PositionCardOwnership
-          percentOwnership={24}
-          variant={PieChartVariant.default}
-        />
+        <PositionCardStaked amount={0.42} />
+        <PositionCardOwnership percentOwnership={24} variant={PieChartVariant.default} />
         <PositionCardFeesAccrued amount={0.069} />
         <PositionCardLastUpdated timestamp="2024-04-20T11:34:59Z" />
       </PositionCard>
     </div>
-  );
+  )
 }
