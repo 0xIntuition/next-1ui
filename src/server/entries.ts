@@ -1,7 +1,7 @@
 import type { Entry } from '@/types'
 import { client } from '@/server/graphql'
 import { getTypeTagAtomIds } from '@/server/appTags'
-import { getNumSubEntriesForEntry } from '@server/subEntries'
+import { getNumSubEntriesForEntry } from '@/server/subEntries'
 import { getVaultTotals } from '@/server/contracts'
 
 type GetEntriesResponse = {
@@ -36,7 +36,7 @@ export type EntryListType = 'TRENDING' | 'RECENT' | 'TOP'
 
 export async function getEntries(offset: number = 0, limit: number = 10, listType: EntryListType = 'RECENT'): Promise<Entry[]> {
   // These atom IDs are used to filter Intuition Data for the "Entry" type defined by this app.
-  const { isTypeTypeId, entryTypeId } = await getTypeTagAtomIds()
+  const { predicateId: isTypeTypeId, entryId: entryTypeId } = await getTypeTagAtomIds()
 
   // This query fetches all "Entry" type atoms from Intuition Data.
   const baseQuery = `
@@ -115,9 +115,9 @@ export async function getEntries(offset: number = 0, limit: number = 10, listTyp
   }
 }
 
-export async function getEntryById(id: string): Promise<Question | null> {
+export async function getEntryById(id: string): Promise<Entry | null> {
   // Get the necessary atom IDs first
-  const { predicateId: typePredicateId, entryTypeId: entryTypeId } = await getTypeTagAtomIds()
+  const { predicateId: typePredicateId, entryId: entryTypeId } = await getTypeTagAtomIds()
 
   const query = `
     query GetEntry($id: numeric!, $typePredicateId: numeric!, $entryTypeId: numeric!) {
