@@ -1,4 +1,4 @@
-import { createTriple as createTripleContract, getTripleCost } from '../services/contracts.server'
+import { createTriple as createTripleContract, getTripleCost } from '@/server/contracts'
 
 export interface CreateTripleInput {
   subjectId: bigint
@@ -6,33 +6,16 @@ export interface CreateTripleInput {
   objectId: bigint
 }
 
+// Creates a new triple -- used by server wallet to organize app data
 export async function createTriple(input: CreateTripleInput): Promise<bigint> {
   // 1. Get triple cost
   const tripleCost = await getTripleCost()
 
   // 2. Create triple via contract
-  return createTripleContract(
+  return await createTripleContract(
     input.subjectId,
     input.predicateId,
     input.objectId,
-    tripleCost
+    tripleCost,
   )
-}
-
-export interface GetTriplesInput {
-  subjectId?: string
-  predicateId?: string
-  objectId?: string
-  limit?: number
-  offset?: number
-}
-
-export interface Triple {
-  id: string
-  subjectId: string
-  predicateId: string
-  objectId: string
-  createdAt: string
-  creator: string
-  stakeAmount: string
 }

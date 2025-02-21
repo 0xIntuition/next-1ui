@@ -1,17 +1,17 @@
 import type { SubEntry } from '@/types'
 import { client } from '@/server/graphql'
-import { getSubEntriesPredicateId } from './tagging.server'
-import { getVaultTotals } from '../services/contracts.server'
+import { getIsSubEntryOfPredicateId } from '@/server/appTags'
+import { getVaultTotals } from '@/server/contracts'
 
-export async function getNumAnswersForQuestion(questionId: string): Promise<number> {
-  const predicateId = await getAnswersPredicateId()
+export async function getNumSubEntriesForEntry(entryId: string): Promise<number> {
+  const predicateId = await getIsSubEntryOfPredicateId()
 
   const query = `
-    query GetAnswersCount($predicateId: numeric!, $questionId: numeric!) {
+    query GetSubEntriesCount($predicateId: numeric!, $entryId: numeric!) {
       triples_aggregate(
         where: {
           predicate_id: { _eq: $predicateId },
-          object_id: { _eq: $questionId }
+          object_id: { _eq: $entryId }
         }
       ) {
         aggregate {
@@ -30,7 +30,7 @@ export async function getNumAnswersForQuestion(questionId: string): Promise<numb
       }
     }>(query, {
       predicateId: predicateId.toString(),
-      questionId: parseInt(questionId)
+      entryId: parseInt(entryId)
     })
 
     return result.triples_aggregate.aggregate.count
@@ -40,7 +40,7 @@ export async function getNumAnswersForQuestion(questionId: string): Promise<numb
   }
 }
 
-type GetAnswersResponse = {
+type GetSubEntriesResponse = {
   triples: Array<{
     subject: {
       id: string
@@ -48,6 +48,8 @@ type GetAnswersResponse = {
         thing: {
           name: string
           description: string
+          image: string
+          url: string
         }
       }
       creator_id: string
@@ -63,16 +65,16 @@ type GetAnswersResponse = {
   }>
 }
 
-export async function getAnswersForQuestion(questionId: bigint, page: number = 1): Promise<Answer[]> {
-  const predicateId = await getAnswersPredicateId()
+export async function getSubEntriesForEntry(entryId: bigint, limit: number = 10, offset: number = 0): Promise<SubEntry[]> {
+  const predicateId = await getIsSubEntryOfPredicateId()
 
 
   const query = `
-    query GetAnswers($predicateId: numeric!, $questionId: numeric!, $limit: Int!, $offset: Int!) {
+    query GetSubEntries($predicateId: numeric!, $entryId: numeric!, $limit: Int!, $offset: Int!) {
       triples(
         where: {
           predicate_id: { _eq: $predicateId },
-          object_id: { _eq: $questionId }
+          object_id: { _eq: $entryId }
         },
         limit: $limit,
         offset: $offset,
@@ -84,6 +86,8 @@ export async function getAnswersForQuestion(questionId: bigint, page: number = 1
             thing {
               name
               description
+              image
+              url
             }
           }
           creator_id
@@ -97,16 +101,16 @@ export async function getAnswersForQuestion(questionId: bigint, page: number = 1
   `
 
   try {
-    const result = await client.request<GetAnswersResponse>(query, {
+    const result = await client.request<GetSubEntriesResponse>(query, {
       predicateId: predicateId.toString(),
-      questionId: questionId.toString(),
-      limit: 10,
-      offset: (page - 1) * 10
+      entryId: entryId.toString(),
+      limit,
+      offset
     })
 
-    console.log("Got answer result", result)
+    console.log("Got sub-entries result", result)
 
-    const answers = await Promise.all(result.triples.map(async triple => {
+    const subEntries = await Promise.all(result.triples.map(async triple => {
       const atom = triple.subject
       if (!atom.value?.thing) {
         console.log("Invalid atom", atom)
@@ -114,21 +118,24 @@ export async function getAnswersForQuestion(questionId: bigint, page: number = 1
       }
 
       const totals = await getVaultTotals(BigInt(atom.id))
-      const answer: Answer = {
+      const subEntry: SubEntry = {
         id: atom.id,
-        content: atom.value.thing.name,
-        explanation: atom.value.thing.description || undefined,
+        entryId: entryId.toString(), // Sub entry is associated with input entry ID
+        name: atom.value.thing.name,
+        description: atom.value.thing.description,
+        image: atom.value.thing.image,
+        url: atom.value.thing.url,
         totalShares: totals.totalShares.toString(),
         totalAssets: totals.totalAssets.toString(),
         createdAt: new Date(parseInt(atom.block_timestamp) * 1000).toISOString(),
         creator: atom.creator_id
       }
 
-      return answer
+      return subEntry
     }))
-    return answers.filter((answer): answer is Answer => answer !== null)
+    return subEntries.filter((subEntry): subEntry is SubEntry => subEntry !== null)
   } catch (error) {
-    console.error('Failed to fetch answers:', error)
+    console.error('Failed to fetch sub-entries:', error)
     return []
   }
 }
@@ -136,15 +143,17 @@ export async function getAnswersForQuestion(questionId: bigint, page: number = 1
 // Note: think about optimizing this.  We should only ever get a question ID or answer ID once it's created in our app
 // So we should be able to display it before our tag is confirmed and we are able to filter.
 // Just to make the experience faster and more fluid.
-export async function getAnswerById(id: string): Promise<Answer | null> {
+export async function getSubEntryById(id: string): Promise<SubEntry | null> {
   const query = `
-    query GetAnswer($id: numeric!) {
+    query GetSubEntry($id: numeric!) {
       atom(id: $id) {
         id
         value {
           thing {
             name
             description
+            image
+            url
           }
         }
         creator_id
@@ -164,6 +173,8 @@ export async function getAnswerById(id: string): Promise<Answer | null> {
           thing: {
             name: string
             description: string
+            image: string
+            url: string
           }
         }
         creator_id: string
@@ -180,8 +191,11 @@ export async function getAnswerById(id: string): Promise<Answer | null> {
 
     return {
       id: result.atom.id,
-      content: result.atom.value.thing.name,
-      explanation: result.atom.value.thing.description || undefined,
+      entryId: '', // We need an additional query to find this via triple relationships 
+      name: result.atom.value.thing.name,
+      description: result.atom.value.thing.description,
+      image: result.atom.value.thing.image,
+      url: result.atom.value.thing.url,
       totalShares: totals.totalShares.toString(),
       totalAssets: totals.totalAssets.toString(),
       createdAt: new Date(parseInt(result.atom.block_timestamp) * 1000).toISOString(),

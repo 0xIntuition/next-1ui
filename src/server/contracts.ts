@@ -34,6 +34,9 @@ const multiVaultAddress = hex(serverEnv.MULTIVAULT_ADDRESS)
 
 // Contract interactions
 // Internal, use EthMultiVault directly
+
+// Creates an atom using the server wallet, returning the newly created atom ID after confirming the TX
+// Used mainly to create app atoms for tagging data.  Recommended to use minimum `value`
 export async function createAtom(atomUri: `0x${string}`, value: bigint) {
   // Generate Create Atom Request
   const { request } = await publicClient.simulateContract({
@@ -51,7 +54,8 @@ export async function createAtom(atomUri: `0x${string}`, value: bigint) {
 
 }
 
-// Internal, use EthMultiVault directly.
+// Internal method for creating triples, typically used for tagging app data
+// Uses internal server wallet
 export async function createTriple(
   subjectId: bigint,
   predicateId: bigint,

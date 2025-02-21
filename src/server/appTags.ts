@@ -8,8 +8,11 @@ export const APP_TAG = {
     description: "Predicate for linking content to applications",
   },
   object: {
-    name: "Info Market POC",
-    description: "The Info Market POC application",
+    name: "Intuition Market Template App",
+    description: "A template application for developers to create their own market apps using Intuition Systems.",
+    // Feel free to add fields for:
+    // image, // url to the logo for your application
+    // url, // url for your application
   },
 };
 
@@ -18,20 +21,20 @@ export const TYPE_TAG = {
     name: "Is Type",
     description: "Predicate for marking content type",
   },
-  questionObject: {
-    name: "Question",
-    description: "A question in the Info Market",
+  entryObject: {
+    name: "Entry",
+    description: "An Entry in the Intuition Market Template App",
   },
-  answerObject: {
-    name: "Answer",
-    description: "An answer in the Info Market",
+  subEntryObject: {
+    name: "Sub-Entry",
+    description: "A Sub-Entry in the Intuition Market Template App",
   },
 };
 
-export const ANSWER_TAG = {
+export const SUBENTRY_TAG = {
   predicate: {
-    name: "Answers",
-    description: "Predicate for linking answers to questions",
+    name: "Is Sub-Entry Of",
+    description: "Predicate for linking Sub-Entries to Entries",
   },
 };
 
@@ -39,9 +42,9 @@ export const ANSWER_TAG = {
 let predicateId: bigint | null = null;
 let objectId: bigint | null = null;
 let typePredicateId: bigint | null = null;
-let questionTypeId: bigint | null = null;
-let answerTypeId: bigint | null = null;
-let answersPredicateId: bigint | null = null;
+let entryTypeId: bigint | null = null;
+let subEntryTypeId: bigint | null = null;
+let subEntryOfPredicateTypeId: bigint | null = null;
 
 /**
  * Gets the IDs of the app tag atoms, creating them if they don't exist
@@ -64,8 +67,8 @@ export async function getAppTagAtomIds(): Promise<{
 }
 
 /**
- * Tags an atom as belonging to the Info Market POC app
- * This creates a triple: [Atom ID] "Is Used By" [Info Market POC]
+ * Tags an atom as belonging to the Market Template app
+ * This creates a triple: [Atom ID] "Is Used By" [This App]
  */
 export async function tagAtomAsAppContent(atomId: bigint): Promise<void> {
   const { predicateId, objectId } = await getAppTagAtomIds();
@@ -83,14 +86,14 @@ export async function tagAtomAsAppContent(atomId: bigint): Promise<void> {
  */
 export async function getTypeTagAtomIds(): Promise<{
   predicateId: bigint;
-  questionId: bigint;
-  answerId: bigint;
+  entryId: bigint;
+  subEntryId: bigint;
 }> {
-  if (typePredicateId && questionTypeId && answerTypeId) {
+  if (typePredicateId && entryTypeId && subEntryTypeId) {
     return {
       predicateId: typePredicateId,
-      questionId: questionTypeId,
-      answerId: answerTypeId,
+      entryId: entryTypeId,
+      subEntryId: subEntryTypeId,
     };
   }
 
@@ -98,66 +101,67 @@ export async function getTypeTagAtomIds(): Promise<{
   // Can optimize this easily, these values can be stored
   // After they are created.
   typePredicateId = await findOrCreateAtom(TYPE_TAG.predicate);
-  questionTypeId = await findOrCreateAtom(TYPE_TAG.questionObject);
-  answerTypeId = await findOrCreateAtom(TYPE_TAG.answerObject);
+  entryTypeId = await findOrCreateAtom(TYPE_TAG.entryObject);
+  subEntryTypeId = await findOrCreateAtom(TYPE_TAG.subEntryObject);
 
   return {
     predicateId: typePredicateId,
-    questionId: questionTypeId,
-    answerId: answerTypeId,
+    entryId: entryTypeId,
+    subEntryId: subEntryTypeId,
   };
 }
 
 /**
- * Gets the ID of the answers predicate atom, creating it if it doesn't exist
+ * Gets the ID of the isSubEntryOfEntry predicate atom, creating it if it doesn't exist
  */
-export async function getAnswersPredicateId(): Promise<bigint> {
-  if (answersPredicateId) {
-    return answersPredicateId;
+export async function getIsSubEntryOfPredicateId(): Promise<bigint> {
+  if (subEntryOfPredicateTypeId) {
+    return subEntryOfPredicateTypeId;
   }
 
-  answersPredicateId = await findOrCreateAtom(ANSWER_TAG.predicate);
-  return answersPredicateId;
+  subEntryOfPredicateTypeId = await findOrCreateAtom(SUBENTRY_TAG.predicate);
+  return subEntryOfPredicateTypeId
 }
 
 /**
- * Tags an atom as being a question
- * This creates a triple: [Atom ID] "Is Type" [Question]
+ * Tags an atom as being an Entry
+ * This creates a triple: [Atom ID] "Is Type" [Entry]
  */
-export async function tagAtomAsQuestion(atomId: bigint): Promise<void> {
-  const { predicateId, questionId } = await getTypeTagAtomIds();
+export async function tagAtomAsEntry(atomId: bigint): Promise<void> {
+  const { predicateId, entryId } = await getTypeTagAtomIds();
 
   await createTriple({
     subjectId: atomId,
     predicateId,
-    objectId: questionId,
+    objectId: entryId,
   });
 }
 
 /**
  * Tags an answer atom as being an answer to a specific question
  * This creates two triples:
- * 1. [Answer ID] "Is Type" [Answer]
- * 2. [Answer ID] "Answers" [Question ID]
- */
-export async function tagAtomAsAnswerToQuestion(
-  answerId: bigint,
-  questionId: bigint
+ * 1. [Atom ID] "Is Type" [SubEntry]
+ * 2. [Atom ID] "Is Sub-Entry Of" [Entry ID]
+ * Thus, we know that the atom belongs to our app, and that it's associated with another atom.
+*/
+export async function tagAtomAsSubEntryToEntry(
+  subEntryId: bigint,
+  entryId: bigint
 ): Promise<void> {
-  // Tag as answer type
-  const { predicateId, answerId: answerTypeId } = await getTypeTagAtomIds();
+  // Tag as sub-entry type
+  const { predicateId, subEntryId: subEntryTypeId } = await getTypeTagAtomIds();
   await createTriple({
-    subjectId: answerId,
+    subjectId: subEntryId,
     predicateId,
-    objectId: answerTypeId,
+    objectId: subEntryTypeId,
   });
 
-  // Link to question
-  const answersPredicateId = await getAnswersPredicateId();
+  // Link to entry
+  const subEntryOfPredicateId = await getIsSubEntryOfPredicateId();
   await createTriple({
-    subjectId: answerId,
-    predicateId: answersPredicateId,
-    objectId: questionId,
+    subjectId: subEntryId,
+    predicateId: subEntryOfPredicateId,
+    objectId: entryId,
   });
 }
 

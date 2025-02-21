@@ -1,8 +1,8 @@
 import type { Entry } from '@/types'
 import { client } from '@/server/graphql'
-import { getTypeTagAtomIds } from './tagging.server'
-import { getNumAnswersForQuestion } from './answers.server'
-import { getVaultTotals } from './contracts.server'
+import { getTypeTagAtomIds } from '@/server/appTags'
+import { getNumSubEntriesForEntry } from '@server/subEntries'
+import { getVaultTotals } from '@/server/contracts'
 
 type GetEntriesResponse = {
   triples: Array<{
@@ -115,18 +115,20 @@ export async function getEntries(offset: number = 0, limit: number = 10, listTyp
   }
 }
 
-export async function getQuestionById(id: string): Promise<Question | null> {
+export async function getEntryById(id: string): Promise<Question | null> {
   // Get the necessary atom IDs first
-  const { predicateId: typePredicateId, questionId: questionTypeId } = await getTypeTagAtomIds()
+  const { predicateId: typePredicateId, entryTypeId: entryTypeId } = await getTypeTagAtomIds()
 
   const query = `
-    query GetQuestion($id: numeric!, $typePredicateId: numeric!, $questionTypeId: numeric!) {
+    query GetEntry($id: numeric!, $typePredicateId: numeric!, $entryTypeId: numeric!) {
       atom(id: $id) {
         id
         value {
           thing {
             name
             description
+            image
+            url
           }
         }
         creator_id
@@ -135,7 +137,7 @@ export async function getQuestionById(id: string): Promise<Question | null> {
       triples(where: {
         subject_id: { _eq: $id },
         predicate_id: { _eq: $typePredicateId },
-        object_id: { _eq: $questionTypeId }
+        object_id: { _eq: $entryTypeId }
       }) {
         id
       }
@@ -150,6 +152,8 @@ export async function getQuestionById(id: string): Promise<Question | null> {
           thing: {
             name: string
             description: string
+            image: string
+            url: string
           }
         }
         creator_id: string
@@ -166,7 +170,7 @@ export async function getQuestionById(id: string): Promise<Question | null> {
     }>(query, {
       id: parseInt(id),
       typePredicateId: typePredicateId.toString(),
-      questionTypeId: questionTypeId.toString()
+      entryTypeId: entryTypeId.toString()
     })
 
     if (!result.atom || result.triples.length === 0) return null
@@ -174,18 +178,19 @@ export async function getQuestionById(id: string): Promise<Question | null> {
     const atom = result.atom
 
     const totals = await getVaultTotals(BigInt(atom.id))
-    console.log("TOTALS: ", totals);
     return {
       id: atom.id,
-      title: atom.value.thing.name,
+      name: atom.value.thing.name,
       description: atom.value.thing.description,
+      image: atom.value.thing.image,
+      url: atom.value.thing.url,
       totalAssets: totals.totalAssets.toString(),
       totalShares: totals.totalShares.toString(),
       createdAt: new Date(parseInt(atom.block_timestamp) * 1000).toISOString(),
       creator: atom.creator_id
     }
   } catch (error) {
-    console.error('Failed to fetch question:', error)
+    console.error('Failed to fetch entry:', error)
     return null
   }
 }
