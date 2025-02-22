@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core'
+import { isEthereumWallet } from '@dynamic-labs/ethereum'
 import { Badge, Text, Card, PieChart, Button, Separator } from '@0xintuition/1ui'
 import { Entry } from '@/types'
 import { formatValue } from '@/lib/formatValue'
+import { SwapModal, type SwapType } from '@/components/SwapModal'
 
 type EntryStats = {
   userState: {
@@ -25,26 +27,51 @@ interface EntryCardProps {
 
 export function EntryCard({ entry }: EntryCardProps) {
   const [imageError, setImageError] = useState(false)
-  const [stats, setStats] = useState<EntryStats | undefined>(entry.stats)
+  const [showSwapModal, setShowSwapModal] = useState(false)
+  const [swapType, setSwapType] = useState<SwapType>('deposit')
   const { primaryWallet } = useDynamicContext()
+  const [stats, setStats] = useState<EntryStats | undefined>(entry.stats)
+  const [userBalance, setUserBalance] = useState('0')
+
+  const fetchStats = async () => {
+    if (!primaryWallet?.address) return
+
+    try {
+      const response = await fetch(`/api/atom-stats?atomId=${entry.id}&userAddress=${primaryWallet.address}`)
+      if (!response.ok) throw new Error('Failed to fetch atom stats')
+      const data = await response.json()
+      console.log('Fetched atom stats:', data)
+      setStats(data)
+    } catch (err) {
+      console.error('Error fetching atom stats:', err)
+    }
+  }
+
+  const fetchBalance = async () => {
+    if (!primaryWallet?.address || !isEthereumWallet(primaryWallet)) return
+    try {
+      const publicClient = await primaryWallet.getPublicClient()
+      const balance = await publicClient.getBalance({
+        address: primaryWallet.address as `0x${string}`,
+      })
+      setUserBalance(balance.toString())
+    } catch (err) {
+      console.error('Error fetching balance:', err)
+    }
+  }
 
   useEffect(() => {
-    async function fetchStats() {
-      if (!primaryWallet?.address) return
-
-      try {
-        const response = await fetch(`/api/atom-stats?atomId=${entry.id}&userAddress=${primaryWallet.address}`)
-        if (!response.ok) throw new Error('Failed to fetch atom stats')
-        const data = await response.json()
-        console.log('Fetched atom stats:', data)
-        setStats(data)
-      } catch (err) {
-        console.error('Error fetching atom stats:', err)
-      }
-    }
-
     fetchStats()
   }, [entry.id, primaryWallet?.address])
+
+  useEffect(() => {
+    fetchBalance()
+  }, [primaryWallet?.address])
+
+  const handleSwapSuccess = async (txHash: `0x${string}`) => {
+    // Refresh both stats and balance
+    await Promise.all([fetchStats(), fetchBalance()])
+  }
 
   const handleImageError = () => {
     setImageError(true)
@@ -160,13 +187,41 @@ export function EntryCard({ entry }: EntryCardProps) {
           </div>
 
           <div className="flex justify-between gap-2 mt-4">
-            <Button variant="primary" size="md">
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => {
+                setSwapType('deposit')
+                setShowSwapModal(true)
+              }}
+            >
               Deposit
             </Button>
-            <Button variant="secondary" size="md">
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={() => {
+                setSwapType('redeem')
+                setShowSwapModal(true)
+              }}
+            >
               Redeem
             </Button>
           </div>
+
+          {showSwapModal && primaryWallet && (
+            <SwapModal
+              type={swapType}
+              atomId={entry.id}
+              sharePrice={stats?.sharePrice || '0'}
+              userShares={stats?.userState?.shares || '0'}
+              userEthBalance={userBalance}
+              totalShares={stats?.vaultTotals?.totalShares || '0'}
+              totalAssets={stats?.vaultTotals?.totalAssets || '0'}
+              onClose={() => setShowSwapModal(false)}
+              onSuccess={handleSwapSuccess}
+            />
+          )}
         </Card>
       </div>
     </div>
