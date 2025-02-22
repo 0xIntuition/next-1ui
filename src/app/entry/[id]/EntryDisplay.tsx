@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { Button, Text, Badge } from '@0xintuition/1ui'
+import { Button, Text, Card } from '@0xintuition/1ui'
 import type { Entry } from '@/types'
+import { EntryCard } from '@/components/EntryCard'
 
 interface EntryDisplayProps {
   entry: Entry
@@ -10,34 +11,40 @@ interface EntryDisplayProps {
 
 export default function EntryDisplay({ entry }: EntryDisplayProps) {
   return (
-    <main className="container mx-auto p-6">
-      <div className="mb-6">
+    <div className="container mx-auto px-4 py-8">
+      <header className="mb-8 flex justify-between items-center">
+        <div>
+          <Text variant="heading1">Intuition Market Template</Text>
+          <Text variant="body" className="text-gray-600">
+            The market platform app template, powered by Intuition Systems
+          </Text>
+        </div>
+      </header>
+
+      <div className="mb-8">
         <Link href="/">
           <Button variant="secondary">← Back to Home</Button>
         </Link>
       </div>
 
-      <article className="space-y-6">
-        <div className="flex items-center justify-between">
-          <Text variant="heading1">{entry.name}</Text>
-          <div className="flex gap-2">
-            <Badge variant="info">{entry.totalShares} Shares</Badge>
-            <Badge variant="success">{entry.totalAssets} Assets</Badge>
-          </div>
-        </div>
+      <div className="space-y-8">
+        {/* Main Entry Card */}
+        <EntryCard entry={entry} />
 
-        <div className="mt-4 space-y-4">
-          {entry.description && <Text variant="body">{entry.description}</Text>}
-          {entry.image && <img src={entry.image} alt={entry.name} className="max-w-full h-auto rounded-lg" />}
-          {entry.url && (
-            <div>
-              <Link href={entry.url} target="_blank" rel="noopener noreferrer">
-                <Button variant="secondary">Visit External Link</Button>
-              </Link>
+        {/* Subentries Section */}
+        {entry.subEntries && entry.subEntries.length > 0 && (
+          <div className="space-y-4">
+            <Text variant="heading2">Sub-Entries ({entry.numSubEntries})</Text>
+            <div className="space-y-4">
+              {entry.subEntries.map((subEntry) => (
+                <Card key={subEntry.id} className="p-4">
+                  <EntryCard entry={subEntry} />
+                </Card>
+              ))}
             </div>
-          )}
-        </div>
-      </article>
-    </main>
+          </div>
+        )}
+      </div>
+    </div>
   )
 }

@@ -83,6 +83,9 @@ export function EntryCard({ entry }: EntryCardProps) {
           )}
           <h1>{entry.name}</h1>
           {entry.description && <p>{entry.description}</p>}
+          <div className="flex gap-2 items-center">
+            {entry.numSubEntries !== undefined && <Badge variant="info">{entry.numSubEntries} Sub-Entries</Badge>}
+          </div>
           {entry.url && (
             <div className="mt-auto pt-2" onClick={(e) => e.stopPropagation()}>
               <Button

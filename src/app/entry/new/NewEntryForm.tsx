@@ -134,8 +134,17 @@ export function NewEntryForm() {
   }
 
   return (
-    <main className="container mx-auto p-6">
-      <div className="mb-6">
+    <div className="container mx-auto px-4 py-8">
+      <header className="mb-8 flex justify-between items-center">
+        <div>
+          <Text variant="heading1">Intuition Market Template</Text>
+          <Text variant="body" className="text-gray-600">
+            The market platform app template, powered by Intuition Systems
+          </Text>
+        </div>
+      </header>
+
+      <div className="mb-8">
         <Link href="/">
           <Button variant="secondary">← Back to Home</Button>
         </Link>
@@ -216,6 +225,6 @@ export function NewEntryForm() {
           </Button>
         </form>
       </Card>
-    </main>
+    </div>
   )
 }
