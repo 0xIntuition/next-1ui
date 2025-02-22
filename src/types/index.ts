@@ -26,5 +26,5 @@ export interface SubEntry {
   // Let's not get too crazy... yet
   // numSubEntries?: number;
   // subEntries?: SubEntry[];
-} 
+}
 

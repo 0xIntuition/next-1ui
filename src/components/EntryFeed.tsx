@@ -1,29 +1,38 @@
 'use client'
 
 import {
-  Badge,
   Button,
   Text,
-  PositionCard,
-  PositionCardStaked,
-  PositionCardOwnership,
-  PositionCardFeesAccrued,
-  PositionCardLastUpdated,
-  PieChartVariant,
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
   CommandList,
+  SegmentedControl,
+  SegmentedControlItem,
 } from '@0xintuition/1ui'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useState, useEffect, useCallback } from 'react'
 import { AuthButton } from '@/components/AuthButton'
+import { EntryCard } from '@/components/EntryCard'
 import { Entry } from '@/types'
 import type { EntryListType } from '@/server/entries'
 import debounce from 'lodash/debounce'
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core'
+
+type EntryStats = {
+  userState: {
+    shares: string
+    assets: string
+  }
+  vaultTotals: {
+    totalShares: string
+    totalAssets: string
+  }
+  sharePrice: string
+}
 
 interface EntryFeedProps {
   initialEntries: Entry[]
@@ -32,7 +41,8 @@ interface EntryFeedProps {
 export function EntryFeed({ initialEntries }: EntryFeedProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [entries, setEntries] = useState<Entry[]>(initialEntries)
+  const { primaryWallet } = useDynamicContext()
+  const [entries, setEntries] = useState<(Entry & { stats?: EntryStats })[]>(initialEntries)
   const [searchQuery, setSearchQuery] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -40,6 +50,12 @@ export function EntryFeed({ initialEntries }: EntryFeedProps) {
   const [searchResults, setSearchResults] = useState<Entry[]>([])
 
   const currentType = (searchParams?.get('type') as EntryListType) || 'RECENT'
+
+  const filterOptions = [
+    { value: 'TRENDING', label: 'Trending' },
+    { value: 'RECENT', label: 'Latest' },
+    { value: 'TOP', label: 'Top' },
+  ]
 
   const performSearch = useCallback(
     debounce(async (query: string) => {
@@ -80,8 +96,29 @@ export function EntryFeed({ initialEntries }: EntryFeedProps) {
       setError(null)
       const response = await fetch(`/api/entries?type=${type}`)
       if (!response.ok) throw new Error('Failed to fetch entries')
-      const data = await response.json()
-      setEntries(data)
+      const entries = await response.json()
+
+      // Only fetch stats if user is connected
+      if (primaryWallet?.address) {
+        const entriesWithStats = await Promise.all(
+          entries.map(async (entry: Entry) => {
+            try {
+              const statsResponse = await fetch(
+                `/api/atom-stats?atomId=${entry.id}&userAddress=${primaryWallet.address}`
+              )
+              if (!statsResponse.ok) throw new Error('Failed to fetch atom stats')
+              const stats = await statsResponse.json()
+              return { ...entry, stats }
+            } catch (err) {
+              console.error(`Failed to fetch stats for entry ${entry.id}:`, err)
+              return entry
+            }
+          })
+        )
+        setEntries(entriesWithStats)
+      } else {
+        setEntries(entries)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch entries')
     } finally {
@@ -149,23 +186,17 @@ export function EntryFeed({ initialEntries }: EntryFeedProps) {
       <section>
         <div className="flex justify-between items-center mb-6">
           <Text variant="heading3">Markets</Text>
-          <div className="flex gap-2">
-            <Button
-              variant={currentType === 'TRENDING' ? 'primary' : 'secondary'}
-              onClick={() => handleFilterChange('TRENDING')}
-            >
-              Trending
-            </Button>
-            <Button
-              variant={currentType === 'RECENT' ? 'primary' : 'secondary'}
-              onClick={() => handleFilterChange('RECENT')}
-            >
-              Latest
-            </Button>
-            <Button variant={currentType === 'TOP' ? 'primary' : 'secondary'} onClick={() => handleFilterChange('TOP')}>
-              Top
-            </Button>
-          </div>
+          <SegmentedControl>
+            {filterOptions.map((option) => (
+              <SegmentedControlItem
+                key={option.value}
+                isActive={currentType === option.value}
+                onClick={() => handleFilterChange(option.value as EntryListType)}
+              >
+                {option.label}
+              </SegmentedControlItem>
+            ))}
+          </SegmentedControl>
         </div>
 
         {isLoading ? (
@@ -186,30 +217,7 @@ export function EntryFeed({ initialEntries }: EntryFeedProps) {
           <div className="space-y-4">
             {entries.map((entry) => (
               <Link key={entry.id} href={`/entry/${entry.id}`}>
-                <PositionCard>
-                  <div className="mb-4">
-                    <Text variant="heading2">{entry.name}</Text>
-                    {entry.description !== entry.name && (
-                      <Text variant="body" className="mt-2">
-                        {entry.description}
-                      </Text>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <PositionCardStaked amount={parseFloat(entry.totalAssets)} />
-                    <PositionCardOwnership
-                      percentOwnership={parseFloat(entry.totalShares)}
-                      variant={PieChartVariant.default}
-                    />
-                    <PositionCardFeesAccrued amount={0} />
-                    <PositionCardLastUpdated timestamp={entry.createdAt} />
-                  </div>
-                  {entry.numSubEntries && entry.numSubEntries > 0 && (
-                    <div className="mt-4">
-                      <Badge variant="secondary">{entry.numSubEntries} sub-entries</Badge>
-                    </div>
-                  )}
-                </PositionCard>
+                <EntryCard entry={entry} />
               </Link>
             ))}
           </div>

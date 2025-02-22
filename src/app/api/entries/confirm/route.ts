@@ -16,9 +16,9 @@ const publicClient = createPublicClient({
 const POLL_INTERVAL = 2000 // 2 seconds
 const MAX_ATTEMPTS = 10 // 20 seconds total
 
-async function waitForAtomIndexing(atomId: bigint): Promise<void> {
+async function waitForAtomIndexing(atomId: bigint, baseUrl: string): Promise<void> {
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-    const atom = await fetch(`/api/entries/${atomId}`)
+    const atom = await fetch(`${baseUrl}/api/entries/${atomId}`)
     if (atom.ok) return
 
     await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL))
@@ -53,8 +53,11 @@ export async function POST(request: Request) {
     await tagAtomAsEntry(atomId)
     console.log('Tagged atom as entry')
 
+    // Get base URL from request URL
+    const baseUrl = new URL(request.url).origin
+
     // Wait for graphql indexer to catch up
-    await waitForAtomIndexing(atomId)
+    await waitForAtomIndexing(atomId, baseUrl)
 
     return NextResponse.json({
       status: 'success',
