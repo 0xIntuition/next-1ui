@@ -5,9 +5,17 @@ import Image from 'next/image'
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core'
 import { isEthereumWallet } from '@dynamic-labs/ethereum'
 import { Badge, Text, Card, PieChart, Button, Separator } from '@0xintuition/1ui'
+import { createPublicClient, http } from 'viem'
+import { mainnet } from 'viem/chains'
 import { Entry } from '@/types'
 import { formatValue } from '@/lib/formatValue'
 import { SwapModal, type SwapType } from '@/components/SwapModal'
+
+// Create a public client for ENS lookups (always use mainnet for ENS)
+const ensClient = createPublicClient({
+  chain: mainnet,
+  transport: http(),
+})
 
 type EntryStats = {
   userState: {
@@ -32,6 +40,7 @@ export function EntryCard({ entry }: EntryCardProps) {
   const { primaryWallet } = useDynamicContext()
   const [stats, setStats] = useState<EntryStats | undefined>(entry.stats)
   const [userBalance, setUserBalance] = useState('0')
+  const [creatorEns, setCreatorEns] = useState<string | null>(null)
 
   const fetchStats = async () => {
     if (!primaryWallet?.address) return
@@ -60,6 +69,17 @@ export function EntryCard({ entry }: EntryCardProps) {
     }
   }
 
+  const fetchCreatorEns = async () => {
+    try {
+      const ensName = await ensClient.getEnsName({
+        address: entry.creator as `0x${string}`,
+      })
+      setCreatorEns(ensName)
+    } catch (err) {
+      console.error('Error fetching ENS name:', err)
+    }
+  }
+
   useEffect(() => {
     fetchStats()
   }, [entry.id, primaryWallet?.address])
@@ -68,7 +88,11 @@ export function EntryCard({ entry }: EntryCardProps) {
     fetchBalance()
   }, [primaryWallet?.address])
 
-  const handleSwapSuccess = async (txHash: `0x${string}`) => {
+  useEffect(() => {
+    fetchCreatorEns()
+  }, [entry.creator])
+
+  const handleSwapSuccess = async () => {
     // Refresh both stats and balance
     await Promise.all([fetchStats(), fetchBalance()])
   }
@@ -110,8 +134,16 @@ export function EntryCard({ entry }: EntryCardProps) {
           )}
           <h1>{entry.name}</h1>
           {entry.description && <p>{entry.description}</p>}
-          <div className="flex gap-2 items-center">
-            {entry.numSubEntries !== undefined && <Badge variant="info">{entry.numSubEntries} Sub-Entries</Badge>}
+          <div className="flex flex-col gap-1">
+            <div className="flex gap-2 items-center">
+              {entry.numSubEntries !== undefined && <Badge variant="info">{entry.numSubEntries} Sub-Entries</Badge>}
+            </div>
+            <div className="flex gap-2 items-center">
+              <Text variant="caption">Created By: </Text>
+              <Text variant="caption" className="text-white/70">
+                {creatorEns || `${entry.creator.slice(0, 6)}...${entry.creator.slice(-4)}`}
+              </Text>
+            </div>
           </div>
           {entry.url && (
             <div className="mt-auto pt-2" onClick={(e) => e.stopPropagation()}>
@@ -137,23 +169,45 @@ export function EntryCard({ entry }: EntryCardProps) {
 
         {/* Middle column - Combined Economics */}
         <Card className="p-4 relative" style={{ background: '#000000' }}>
-          <Text variant="h3" className="mb-2">
-            Vault Overview
-          </Text>
+          {/* Title with container effect */}
+          <div className="relative mb-6">
+            <Separator
+              orientation="horizontal"
+              decorative
+              className="absolute"
+              style={{
+                backgroundColor: 'white',
+                opacity: '1',
+                height: '1px',
+                width: 'calc(100% + 2rem)',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                left: '-1rem',
+              }}
+            />
+            <div className="flex justify-center">
+              <Text variant="h3" className="relative px-4 mx-auto" style={{ background: '#000000' }}>
+                Vault Overview
+              </Text>
+            </div>
+          </div>
+
+          {/* Vertical separator */}
           <Separator
             orientation="vertical"
             decorative
-            className="absolute inset-y-0"
+            className="absolute"
             style={{
               left: '50%',
               transform: 'translateX(-50%)',
               backgroundColor: 'white',
               opacity: '1',
               width: '1px',
-              top: '0',
-              bottom: '0',
+              top: '3rem',
+              height: 'calc(100% - 3rem)',
             }}
           />
+
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Text variant="caption">Total Assets</Text>
