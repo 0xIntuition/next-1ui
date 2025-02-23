@@ -107,13 +107,13 @@ export async function getVaultState(atomId: bigint, address: string) {
 }
 
 export async function getVaultTotals(atomId: bigint) {
-  const [totalShares, totalAssets] = await publicClient.readContract({
+  const [totalAssets, totalShares] = await publicClient.readContract({
     address: multiVaultAddress,
     abi: MULTIVAULT_ABI,
     functionName: 'vaults',
     args: [atomId]
   })
-  return { totalShares, totalAssets }
+  return { totalAssets, totalShares }
 }
 
 export async function getCurrentSharePrice(atomId: bigint) {

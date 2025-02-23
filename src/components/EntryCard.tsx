@@ -102,8 +102,12 @@ export function EntryCard({ entry }: EntryCardProps) {
   }
 
   // Calculate ownership percentage
-  const ownershipPercentage = stats?.userState
+  const ownershipPercentageShares = stats?.userState
     ? (Number(stats.userState.shares) / Number(stats.vaultTotals.totalShares)) * 100
+    : 0
+
+  const ownershipPercentageAssets = stats?.userState
+    ? (Number(stats.userState.assets) / Number(stats.vaultTotals.totalAssets)) * 100
     : 0
 
   return (
@@ -225,17 +229,19 @@ export function EntryCard({ entry }: EntryCardProps) {
               <Text variant="caption">Your Shares</Text>
               <Text variant="body">{formatValue(BigInt(stats?.userState?.shares || '0'), true, false)}</Text>
               <Text variant="caption">Your Ownership</Text>
-              <Text variant="body">{ownershipPercentage.toFixed(2)}%</Text>
+              <Text variant="body">{ownershipPercentageShares.toFixed(2)}%</Text>
             </div>
           </div>
 
           <div className="flex justify-between items-center w-full mt-4">
             <div className="flex items-center gap-2">
               <Text variant="caption">Shares</Text>
-              <PieChart variant="forVsAgainst" size="sm" percentage={ownershipPercentage} />
+              <PieChart variant="forVsAgainst" size="sm" percentage={ownershipPercentageShares} />
+              <Text variant="caption">{ownershipPercentageShares.toFixed(2)}%</Text>
             </div>
             <div className="flex items-center gap-2">
-              <PieChart variant="forVsAgainst" size="sm" percentage={ownershipPercentage} />
+              <Text variant="caption">{ownershipPercentageAssets.toFixed(2)}%</Text>
+              <PieChart variant="forVsAgainst" size="sm" percentage={ownershipPercentageAssets} />
               <Text variant="caption">Assets</Text>
             </div>
           </div>
