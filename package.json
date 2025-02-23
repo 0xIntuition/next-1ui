@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "pnpm lint --fix",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "new-wallet": "npx tsx scripts/generate_wallet.ts"
   },
   "dependencies": {
     "@0xintuition/1ui": "^0.3.6",

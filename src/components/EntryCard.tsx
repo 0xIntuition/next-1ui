@@ -221,7 +221,7 @@ export function EntryCard({ entry }: EntryCardProps) {
               <Text variant="caption">Total Shares</Text>
               <Text variant="body">{formatValue(BigInt(stats?.vaultTotals?.totalShares || '0'), true, false)}</Text>
               <Text variant="caption">Share Price</Text>
-              <Text variant="body">{formatValue(BigInt(stats?.sharePrice || '0'), false, false)} ETH</Text>
+              <Text variant="body">{formatValue(BigInt(stats?.sharePrice || '0'), false, false)} : 1</Text>
             </div>
             <div className="text-right">
               <Text variant="caption">Your Assets</Text>

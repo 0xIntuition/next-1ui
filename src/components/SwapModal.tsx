@@ -256,15 +256,15 @@ export function SwapModal({
             {/* Stats */}
             <div className="space-y-1 border-t border-white/20 pt-4">
               <div className="flex justify-between">
-                <Text variant="caption">Share Price:</Text>
-                <Text variant="caption">{formatValue(BigInt(sharePrice))} ETH</Text>
+                <Text variant="caption">Current Share Price:</Text>
+                <Text variant="caption">{formatValue(BigInt(sharePrice))} : 1</Text>
               </div>
               <div className="flex justify-between">
-                <Text variant="caption">Total Assets:</Text>
+                <Text variant="caption">Assets In Pool:</Text>
                 <Text variant="caption">{formatValue(BigInt(totalAssets))} ETH</Text>
               </div>
               <div className="flex justify-between">
-                <Text variant="caption">Total Shares:</Text>
+                <Text variant="caption">Shares In Pool:</Text>
                 <Text variant="caption">{formatValue(BigInt(totalShares), true)}</Text>
               </div>
             </div>
