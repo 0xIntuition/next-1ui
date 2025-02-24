@@ -46,10 +46,10 @@ export function EntryCard({ entry, showShare = false, truncate = true }: EntryCa
   const [creatorEns, setCreatorEns] = useState<string | null>(null)
 
   const fetchStats = async () => {
-    if (!primaryWallet?.address) return
+    const userAddress = !primaryWallet?.address ? '0x0000000000000000000000000000000000000000' : primaryWallet.address
 
     try {
-      const response = await fetch(`/api/atom-stats?atomId=${entry.id}&userAddress=${primaryWallet.address}`)
+      const response = await fetch(`/api/atom-stats?atomId=${entry.id}&userAddress=${userAddress}`)
       if (!response.ok) throw new Error('Failed to fetch atom stats')
       const data = await response.json()
       console.log('Fetched atom stats:', data)
@@ -291,24 +291,46 @@ export function EntryCard({ entry, showShare = false, truncate = true }: EntryCa
                 </div>
                 <div className="text-right">
                   <Text variant="caption">Your Assets</Text>
-                  <Text variant="body">{formatValue(BigInt(stats?.userState?.assets || '0'), false, false)} ETH</Text>
+                  <Text variant="body">
+                    {primaryWallet?.address
+                      ? `${formatValue(BigInt(stats?.userState?.assets || '0'), false, false)} ETH`
+                      : '? ETH'}
+                  </Text>
                   <Text variant="caption">Your Shares</Text>
-                  <Text variant="body">{formatValue(BigInt(stats?.userState?.shares || '0'), true, false)}</Text>
+                  <Text variant="body">
+                    {primaryWallet?.address
+                      ? `${formatValue(BigInt(stats?.userState?.shares || '0'), true, false)}`
+                      : '?'}
+                  </Text>
                   <Text variant="caption">Your Ownership</Text>
-                  <Text variant="body">{ownershipPercentageShares.toFixed(2)}%</Text>
+                  <Text variant="body">
+                    {primaryWallet?.address ? `${ownershipPercentageShares.toFixed(2)}%` : '?'}
+                  </Text>
                 </div>
               </div>
 
               <div className="flex justify-between items-center w-full mt-4">
                 <div className="flex items-center gap-2">
-                  <Text variant="caption">Shares</Text>
-                  <PieChart variant="forVsAgainst" size="sm" percentage={ownershipPercentageShares} />
-                  <Text variant="caption">{ownershipPercentageShares.toFixed(2)}%</Text>
+                  {primaryWallet?.address && <Text variant="caption">Shares</Text>}
+                  <PieChart
+                    variant={primaryWallet?.address ? 'forVsAgainst' : 'default'}
+                    size="sm"
+                    percentage={primaryWallet?.address ? ownershipPercentageShares : 0}
+                  />
+                  <Text variant="caption">
+                    {primaryWallet?.address ? `${ownershipPercentageShares.toFixed(2)}%` : ''}
+                  </Text>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Text variant="caption">{ownershipPercentageAssets.toFixed(2)}%</Text>
-                  <PieChart variant="forVsAgainst" size="sm" percentage={ownershipPercentageAssets} />
-                  <Text variant="caption">Assets</Text>
+                  <Text variant="caption">
+                    {primaryWallet?.address ? `${ownershipPercentageAssets.toFixed(2)}%` : ''}
+                  </Text>
+                  <PieChart
+                    variant={primaryWallet?.address ? 'forVsAgainst' : 'default'}
+                    size="sm"
+                    percentage={primaryWallet?.address ? ownershipPercentageAssets : 0}
+                  />
+                  {primaryWallet?.address && <Text variant="caption">Assets</Text>}
                 </div>
               </div>
 
@@ -316,6 +338,7 @@ export function EntryCard({ entry, showShare = false, truncate = true }: EntryCa
                 <Button
                   variant="primary"
                   size="md"
+                  disabled={!primaryWallet?.address}
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
@@ -328,6 +351,7 @@ export function EntryCard({ entry, showShare = false, truncate = true }: EntryCa
                 <Button
                   variant="secondary"
                   size="md"
+                  disabled={!primaryWallet?.address}
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
