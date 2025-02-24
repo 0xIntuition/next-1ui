@@ -247,7 +247,7 @@ export function EntryFeed({ initialEntries }: EntryFeedProps) {
           <div className="space-y-4">
             {entries.map((entry) => (
               <Link key={entry.id} href={`/entry/${entry.id}`} className="block p-2">
-                <EntryCard entry={entry} showShare={true} />
+                <EntryCard entry={entry} showShare={true} truncate={true} />
               </Link>
             ))}
           </div>

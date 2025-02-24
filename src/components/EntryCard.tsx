@@ -32,9 +32,10 @@ type EntryStats = {
 interface EntryCardProps {
   entry: Entry & { stats?: EntryStats }
   showShare?: boolean
+  truncate?: boolean
 }
 
-export function EntryCard({ entry, showShare = false }: EntryCardProps) {
+export function EntryCard({ entry, showShare = false, truncate = true }: EntryCardProps) {
   const [imageError, setImageError] = useState(false)
   const [showSwapModal, setShowSwapModal] = useState(false)
   const [swapType, setSwapType] = useState<SwapType>('deposit')
@@ -171,8 +172,14 @@ export function EntryCard({ entry, showShare = false }: EntryCardProps) {
               />
             </div>
           )}
-          <h1>{entry.name}</h1>
-          {entry.description && <p>{entry.description}</p>}
+          <h1>
+            {truncate ? entry.name.slice(0, 20) : entry.name}
+            {truncate && entry.name.length > 20 ? '...' : ''}
+          </h1>
+          <p>
+            {truncate ? entry.description.slice(0, 100) : entry.description}
+            {truncate && entry.description.length > 100 ? '...' : ''}
+          </p>
           <div className="flex flex-col gap-1">
             <div className="flex gap-2 items-center">
               {entry.numSubEntries !== undefined && <Badge variant="info">{entry.numSubEntries} Sub-Entries</Badge>}
