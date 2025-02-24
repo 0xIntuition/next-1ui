@@ -15,13 +15,13 @@ import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { useState, useEffect, useMemo } from 'react'
-import { AuthButton } from '@/components/AuthButton'
 import { EntryCard } from '@/components/EntryCard'
 import { Entry } from '@/types'
 import type { EntryListType } from '@/server/entries'
 import debounce from 'lodash/debounce'
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core'
 import { SearchResult } from '@/server/search'
+import { Header } from '@/components/Header'
 
 type EntryStats = {
   userState: {
@@ -135,15 +135,7 @@ export function EntryFeed({ initialEntries }: EntryFeedProps) {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <header className="mb-8 flex justify-between items-center">
-        <div>
-          <Text variant="heading1">Intuition Market Template</Text>
-          <Text variant="body" className="text-gray-600">
-            The market platform app template, powered by Intuition Systems
-          </Text>
-        </div>
-        <AuthButton />
-      </header>
+      <Header />
 
       {/* Authentication and Search Section */}
       <div className="bg-white rounded-lg shadow p-6 mb-8">

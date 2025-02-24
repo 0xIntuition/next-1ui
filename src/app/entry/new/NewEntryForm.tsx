@@ -9,6 +9,7 @@ import { isEthereumWallet } from '@dynamic-labs/ethereum'
 import { stringToHex, encodeFunctionData, keccak256 } from 'viem'
 import { clientEnv } from '@/lib/env'
 import { MULTIVAULT_ABI } from '@/lib/contracts'
+import { Header } from '@/components/Header'
 
 export function NewEntryForm() {
   const router = useRouter()
@@ -135,14 +136,7 @@ export function NewEntryForm() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <header className="mb-8 flex justify-between items-center">
-        <div>
-          <Text variant="heading1">Intuition Market Template</Text>
-          <Text variant="body" className="text-gray-600">
-            The market platform app template, powered by Intuition Systems
-          </Text>
-        </div>
-      </header>
+      <Header />
 
       <div className="mb-8">
         <Link href="/">

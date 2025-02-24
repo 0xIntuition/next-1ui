@@ -8,6 +8,7 @@ import { NewSubEntryForm } from '@/components/NewSubEntryForm'
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core'
 import { isEthereumWallet } from '@dynamic-labs/ethereum'
 import { useState } from 'react'
+import { Header } from '@/components/Header'
 
 interface EntryDisplayProps {
   entry: Entry
@@ -21,14 +22,7 @@ export default function EntryDisplay({ entry }: EntryDisplayProps) {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <header className="mb-8 flex justify-between items-center">
-        <div>
-          <Text variant="heading1">Intuition Market Template</Text>
-          <Text variant="body" className="text-gray-600">
-            The market platform app template, powered by Intuition Systems
-          </Text>
-        </div>
-      </header>
+      <Header />
 
       <div className="mb-8">
         <Link href="/">

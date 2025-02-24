@@ -40,6 +40,8 @@ export function SwapModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isCalculating, setIsCalculating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showEnterIndicator, setShowEnterIndicator] = useState(false)
+  const [pendingConversion, setPendingConversion] = useState<string | null>(null)
 
   // Reset values when type changes
   useEffect(() => {
@@ -71,8 +73,27 @@ export function SwapModal({
 
     try {
       const publicClient = await primaryWallet.getPublicClient()
-      const assets = type === 'deposit' ? parseEther(value) : BigInt(0)
-      const shares = type === 'redeem' ? BigInt(value) : BigInt(0)
+      let parsedValue: bigint
+
+      // Handle deposit case with parseEther
+      if (type === 'deposit') {
+        try {
+          // If the value is already in Wei (from scientific notation), use BigInt directly
+          if (value.includes('e') || /^\d+$/.test(value)) {
+            parsedValue = BigInt(value)
+          } else {
+            parsedValue = parseEther(value)
+          }
+        } catch {
+          parsedValue = BigInt(0)
+        }
+      } else {
+        // For redeem, just use BigInt
+        parsedValue = BigInt(value)
+      }
+
+      const assets = type === 'deposit' ? parsedValue : BigInt(0)
+      const shares = type === 'redeem' ? parsedValue : BigInt(0)
 
       const estimate = await publicClient.readContract({
         address: clientEnv.MULTIVAULT_ADDRESS as `0x${string}`,
@@ -137,17 +158,92 @@ export function SwapModal({
 
   const validateAmount = (value: string): boolean => {
     if (!value) return false
-    const ethRegex = /^\d*\.?\d{0,18}$/
-    if (!ethRegex.test(value)) return false
+
+    // Handle scientific notation and ETH suffix
+    const scientificRegex = /^\d*\.?\d*e[+-]?\d+$/i
+    const ethSuffixRegex = /^\d*\.?\d*\s*eth$/i
+    const standardRegex = /^\d*\.?\d{0,18}$/
+
+    // Allow typing in progress for scientific notation and ETH suffix
+    const inProgressScientific = /^\d*\.?\d*e[+-]?\d*$/i
+    const inProgressEth = /^\d*\.?\d*\s*e?t?h?$/i
+
+    if (inProgressScientific.test(value) || inProgressEth.test(value)) {
+      return true
+    }
+
+    if (scientificRegex.test(value) || ethSuffixRegex.test(value)) {
+      return true
+    }
+
+    if (!standardRegex.test(value)) return false
     const numValue = parseFloat(value)
     return !isNaN(numValue) && numValue > 0
   }
 
+  const convertToRawNumber = (value: string): string | null => {
+    try {
+      // Handle ETH suffix
+      if (/eth$/i.test(value)) {
+        const numStr = value.replace(/\s*eth$/i, '')
+        const num = parseFloat(numStr)
+        if (isNaN(num)) return null
+        return (num * 1e18).toLocaleString('fullwide', { useGrouping: false })
+      }
+
+      // Handle scientific notation
+      const num = Number(value)
+      if (isNaN(num)) return null
+      return num.toLocaleString('fullwide', { useGrouping: false })
+    } catch {
+      return null
+    }
+  }
+
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    if (value === '' || validateAmount(value)) {
+    const value = e.target.value.toLowerCase()
+
+    if (value === '') {
+      setAmount('')
+      setError(null)
+      setShowEnterIndicator(false)
+      setPendingConversion(null)
+      return
+    }
+
+    if (validateAmount(value)) {
       setAmount(value)
       setError(null)
+
+      // Show enter indicator only for complete scientific notation or eth suffix
+      const scientificRegex = /^\d*\.?\d*e[+-]?\d+$/i
+      const ethSuffixRegex = /^\d*\.?\d*\s*eth$/i
+      const needsConversion = scientificRegex.test(value) || ethSuffixRegex.test(value)
+
+      setShowEnterIndicator(needsConversion)
+      const converted = needsConversion ? convertToRawNumber(value) : null
+      setPendingConversion(converted)
+
+      // Update estimate with either the converted value or the current input
+      const estimateValue = converted || value
+      updateEstimate(estimateValue)
+    }
+  }
+
+  const handleInputBlur = () => {
+    if (pendingConversion) {
+      setAmount(pendingConversion)
+      setShowEnterIndicator(false)
+      setPendingConversion(null)
+    }
+  }
+
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && pendingConversion) {
+      e.preventDefault()
+      setAmount(pendingConversion)
+      setShowEnterIndicator(false)
+      setPendingConversion(null)
     }
   }
 
@@ -206,11 +302,13 @@ export function SwapModal({
 
         <Input
           type="text"
-          pattern="^\d*\.?\d{0,18}$"
           placeholder="0.0"
           value={amount}
           onChange={handleAmountChange}
+          onBlur={handleInputBlur}
+          onKeyDown={handleInputKeyDown}
           className="bg-gray-100/5 border-gray-100/20"
+          endAdornment={showEnterIndicator ? '[enter]' : undefined}
         />
         <div className="flex justify-center mt-1">
           <Text variant="caption">{type === 'deposit' ? 'ETH' : 'Shares'}</Text>
