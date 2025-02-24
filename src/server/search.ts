@@ -81,20 +81,14 @@ export interface SearchResult {
   }
 }
 
-export async function searchEntries(searchStr: string): Promise<SearchResult[]> {
+async function searchTerm(searchStr: string, typePredicateId: string, entryTypeId: string): Promise<SearchResult[]> {
   const formattedStr = `%${searchStr}%`
-  const { predicateId: typePredicateId, entryId: entryTypeId, /*subEntryTypeId: answerTypeId*/ } = await getTypeTagAtomIds()
 
   const result = await client.request<SearchResponse>(searchEntriesQuery, {
     searchStr: formattedStr,
-    typePredicateId: typePredicateId.toString(),
-    entryOrSubEntryTypeId: entryTypeId.toString()
+    typePredicateId: typePredicateId,
+    entryOrSubEntryTypeId: entryTypeId
   })
-
-  // TODO: use total_shares elsewhere, since it seems to work.
-  // for (const atom of result.atoms) {
-  //   console.log("search atom: ", atom)
-  // }
 
   return result.atoms.map((atom) => ({
     id: atom.id.toString(),
@@ -104,4 +98,40 @@ export async function searchEntries(searchStr: string): Promise<SearchResult[]> 
     url: atom.value.thing.url,
     vault: atom.vault
   }))
+}
+
+export async function searchEntries(searchStr: string): Promise<SearchResult[]> {
+  const { predicateId: typePredicateId, entryId: entryTypeId } = await getTypeTagAtomIds()
+
+  // create an array of all terms in searchStr
+  const terms = searchStr.split(' ').filter(term => term.length > 0)
+
+  // Search for each term
+  const termResults = await Promise.all(
+    terms.map(term => searchTerm(term, typePredicateId.toString(), entryTypeId.toString()))
+  )
+
+  // Count frequency of each result across all term searches
+  const frequencyMap = new Map<string, { result: SearchResult; count: number }>()
+
+  termResults.flat().forEach(result => {
+    const existing = frequencyMap.get(result.id)
+    if (existing) {
+      existing.count++
+    } else {
+      frequencyMap.set(result.id, { result, count: 1 })
+    }
+  })
+
+  // Sort by frequency (desc) and then by vault total_shares (desc)
+  // Ignore results that didn't show up for all terms
+  const results = Array.from(frequencyMap.values())
+    .filter(item => item.count >= terms.length)
+    .sort((a, b) => {
+      if (b.count !== a.count) return b.count - a.count
+      return Number(b.result.vault.total_shares) - Number(a.result.vault.total_shares)
+    })
+    .map(item => item.result)
+
+  return results
 } 
