@@ -41,8 +41,8 @@ export function AuthButton() {
           </Button>
         </div>
       ) : (
-        <Button variant="primary" onClick={() => setShowAuthFlow(true)}>
-          Connect your wallet
+        <Button variant="secondary" onClick={() => setShowAuthFlow(true)}>
+          Connect
         </Button>
       )}
     </div>

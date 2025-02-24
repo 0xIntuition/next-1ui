@@ -138,15 +138,15 @@ export function NewEntryForm() {
     <div className="container mx-auto px-4 py-8">
       <Header />
 
-      <div className="mb-8">
+      <div className="mb-8 py-4">
         <Link href="/">
-          <Button variant="secondary">← Back to Home</Button>
+          <Button variant="secondary">← Back to Feed</Button>
         </Link>
       </div>
 
-      <Card className="max-w-2xl mx-auto">
+      <Card className="max-w-2xl mx-auto p-4">
         <form onSubmit={handleCreateEntry} className="space-y-4">
-          <Text variant="heading1" className="mb-6">
+          <Text variant="heading5" className="mb-6 text-center">
             Create New Entry
           </Text>
 

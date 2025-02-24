@@ -5,7 +5,7 @@ export function Header() {
   return (
     <header className="mb-8 flex justify-between items-center">
       <div>
-        <Text variant="heading1">Intuition Market Template</Text>
+        <Text variant="heading5">Intuition Market Template</Text>
         <Text variant="body" className="text-gray-600">
           The market platform app template, powered by Intuition Systems
         </Text>

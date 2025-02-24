@@ -207,7 +207,7 @@ export function EntryFeed({ initialEntries }: EntryFeedProps) {
       {/* Entries Feed */}
       <section>
         <div className="flex justify-between items-center mb-6">
-          <Text variant="heading3">Markets</Text>
+          <Text variant="heading5">Markets</Text>
           <SegmentedControl>
             {filterOptions.map((option) => (
               <SegmentedControlItem

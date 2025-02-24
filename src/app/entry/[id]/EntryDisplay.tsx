@@ -24,9 +24,9 @@ export default function EntryDisplay({ entry }: EntryDisplayProps) {
     <div className="container mx-auto px-4 py-8">
       <Header />
 
-      <div className="mb-8">
+      <div className="mb-8 py-4">
         <Link href="/">
-          <Button variant="secondary">← Back to Home</Button>
+          <Button variant="secondary">← Back to Feed</Button>
         </Link>
       </div>
 
