@@ -144,7 +144,16 @@ export function EntryCard({ entry, showShare = false, truncate = true }: EntryCa
       }}
     >
       {/* Main grid container with 3:1 ratio */}
-      <div className="grid w-full" style={{ gridTemplateColumns: '3fr 1fr', gap: '2rem' }}>
+      <style jsx>{`
+        @media (max-width: 640px) {
+          .entry-grid {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 2rem !important;
+          }
+        }
+      `}</style>
+      <div className="entry-grid" style={{ display: 'grid', gridTemplateColumns: '3fr 1fr', gap: '2rem' }}>
         {/* Left column - Atom Info Section */}
         <div
           className="flex flex-col gap-2 p-4 rounded-xl border border-white/20 relative"
