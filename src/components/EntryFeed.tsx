@@ -13,13 +13,15 @@ import {
 } from '@0xintuition/1ui'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { useState, useEffect, useCallback } from 'react'
+import Image from 'next/image'
+import { useState, useEffect, useMemo } from 'react'
 import { AuthButton } from '@/components/AuthButton'
 import { EntryCard } from '@/components/EntryCard'
 import { Entry } from '@/types'
 import type { EntryListType } from '@/server/entries'
 import debounce from 'lodash/debounce'
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core'
+import { SearchResult } from '@/server/search'
 
 type EntryStats = {
   userState: {
@@ -45,8 +47,8 @@ export function EntryFeed({ initialEntries }: EntryFeedProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [isSearching, setIsSearching] = useState(false)
-  const [searchResults, setSearchResults] = useState<Entry[]>([])
+  // const [isSearching, setIsSearching] = useState(false)
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
 
   const currentType = (searchParams?.get('type') as EntryListType) || 'RECENT'
 
@@ -56,38 +58,40 @@ export function EntryFeed({ initialEntries }: EntryFeedProps) {
     { value: 'TOP', label: 'Top' },
   ]
 
-  const performSearch = useCallback(
-    debounce(async (query: string) => {
-      if (!query.trim()) {
-        setSearchResults([])
-        setIsSearching(false)
-        return
-      }
+  const debouncedSearch = useMemo(
+    () =>
+      debounce(async (q: string) => {
+        if (!q.trim()) {
+          setSearchResults([])
+          // setIsSearching(false)
+          return
+        }
 
-      setIsSearching(true)
-      try {
-        const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`)
-        if (!response.ok) throw new Error('Search failed')
-        const results = await response.json()
-        setSearchResults(results)
-      } catch (err) {
-        console.error('Search error:', err)
-        setError(err instanceof Error ? err.message : 'Search failed')
-      } finally {
-        setIsSearching(false)
-      }
-    }, 300),
+        // setIsSearching(true)
+        try {
+          const response = await fetch(`/api/search?q=${encodeURIComponent(q)}`)
+          if (!response.ok) throw new Error('Search failed')
+          const results = await response.json()
+          setSearchResults(results)
+        } catch (err) {
+          console.error('Search error:', err)
+          setError(err instanceof Error ? err.message : 'Search failed')
+        } finally {
+          // setIsSearching(false)
+        }
+      }, 100),
     []
   )
 
   useEffect(() => {
     if (searchQuery) {
-      performSearch(searchQuery)
+      debouncedSearch(searchQuery)
     } else {
       setSearchResults([])
+      debouncedSearch.cancel()
     }
-    return () => performSearch.cancel()
-  }, [searchQuery, performSearch])
+    return () => debouncedSearch.cancel()
+  }, [searchQuery, debouncedSearch])
 
   const handleFilterChange = async (type: EntryListType) => {
     const params = new URLSearchParams(searchParams?.toString() || '')
@@ -164,7 +168,6 @@ export function EntryFeed({ initialEntries }: EntryFeedProps) {
               <CommandInput placeholder="Search entries..." value={searchQuery} onValueChange={setSearchQuery} />
               <CommandList>
                 <CommandGroup>
-                  {isSearching && <CommandItem disabled>Searching...</CommandItem>}
                   {searchResults.map((entry) => (
                     <CommandItem
                       key={entry.id}
@@ -174,19 +177,34 @@ export function EntryFeed({ initialEntries }: EntryFeedProps) {
                         setSearchQuery('')
                       }}
                     >
-                      <div className="flex flex-col">
-                        <Text variant="body">{entry.name}</Text>
-                        {entry.description && entry.description !== entry.name && (
-                          <Text variant="caption" className="text-gray-500">
-                            {entry.description}
-                          </Text>
-                        )}
+                      <div className="flex items-start gap-3">
+                        <div className="w-12 h-12 flex-shrink-0 relative">
+                          <Image
+                            src={entry.image || '/placeholder.png'}
+                            alt={entry.name}
+                            fill
+                            className="object-cover rounded-md"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1 min-w-0">
+                          <Text variant="body">{entry.name}</Text>
+                          {entry.description && entry.description !== entry.name && (
+                            <div className="flex items-center gap-2">
+                              <Text variant="caption" className="text-gray-500 truncate max-w-[300px]">
+                                {entry.description}
+                              </Text>
+                              <Text variant="caption" className="text-gray-500 whitespace-nowrap">
+                                ·{' '}
+                                {entry.vault?.total_shares
+                                  ? `${Number(entry.vault.total_shares).toExponential(2)} shares`
+                                  : 'No shares'}
+                              </Text>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </CommandItem>
                   ))}
-                  {!isSearching && searchQuery && searchResults.length === 0 && (
-                    <CommandItem disabled>No results found</CommandItem>
-                  )}
                 </CommandGroup>
               </CommandList>
             </Command>

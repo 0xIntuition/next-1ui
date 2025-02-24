@@ -61,6 +61,9 @@ interface AtomResult {
     object_id: number
   }>
   block_timestamp: string
+  vault: {
+    total_shares: string
+  }
 }
 
 interface SearchResponse {
@@ -73,6 +76,9 @@ export interface SearchResult {
   description: string
   image: string
   url: string
+  vault: {
+    total_shares: string
+  }
 }
 
 export async function searchEntries(searchStr: string): Promise<SearchResult[]> {
@@ -90,12 +96,12 @@ export async function searchEntries(searchStr: string): Promise<SearchResult[]> 
   //   console.log("search atom: ", atom)
   // }
 
-  // Just return basic info for now
   return result.atoms.map((atom) => ({
     id: atom.id.toString(),
     name: atom.value.thing.name,
     description: atom.value.thing.description || atom.data || '',
     image: atom.value.thing.image,
     url: atom.value.thing.url,
+    vault: atom.vault
   }))
 } 
