@@ -38,7 +38,7 @@ export default function EntryDisplay({ entry }: EntryDisplayProps) {
 
       <div className="space-y-8">
         {/* Main Entry Card */}
-        <EntryCard entry={entry} />
+        <EntryCard entry={entry} showShare={true} />
 
         {/* Create Sub-Entry Section */}
         <div className="space-y-4">
@@ -58,7 +58,7 @@ export default function EntryDisplay({ entry }: EntryDisplayProps) {
             <div className="space-y-4">
               {entry.subEntries.map((subEntry) => (
                 <Card key={subEntry.id} className="p-4">
-                  <EntryCard entry={subEntry} />
+                  <EntryCard entry={subEntry} showShare={false} />
                 </Card>
               ))}
             </div>

@@ -31,12 +31,14 @@ type EntryStats = {
 
 interface EntryCardProps {
   entry: Entry & { stats?: EntryStats }
+  showShare?: boolean
 }
 
-export function EntryCard({ entry }: EntryCardProps) {
+export function EntryCard({ entry, showShare = false }: EntryCardProps) {
   const [imageError, setImageError] = useState(false)
   const [showSwapModal, setShowSwapModal] = useState(false)
   const [swapType, setSwapType] = useState<SwapType>('deposit')
+  const [shareClicked, setShareClicked] = useState(false)
   const { primaryWallet } = useDynamicContext()
   const [stats, setStats] = useState<EntryStats | undefined>(entry.stats)
   const [userBalance, setUserBalance] = useState('0')
@@ -101,6 +103,26 @@ export function EntryCard({ entry }: EntryCardProps) {
     setImageError(true)
   }
 
+  const handleShare = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: entry.name,
+          text: entry.description,
+          url: `${window.location.origin}/entry/${entry.id}`,
+        })
+      } else {
+        await navigator.clipboard.writeText(`${window.location.origin}/entry/${entry.id}`)
+      }
+      setShareClicked(true)
+      setTimeout(() => setShareClicked(false), 2000)
+    } catch (err) {
+      console.error('Error sharing:', err)
+    }
+  }
+
   // Calculate ownership percentage
   const ownershipPercentageShares = stats?.userState
     ? (Number(stats.userState.shares) / Number(stats.vaultTotals.totalShares)) * 100
@@ -123,7 +145,20 @@ export function EntryCard({ entry }: EntryCardProps) {
       {/* Main grid container with 3:1:1 ratio */}
       <div className="grid w-full" style={{ gridTemplateColumns: '3fr 1fr', gap: '2rem' }}>
         {/* Left column - Atom Info Section */}
-        <div className="flex flex-col gap-2 p-4 rounded-xl border border-white/20" style={{ background: '#000000' }}>
+        <div
+          className="flex flex-col gap-2 p-4 rounded-xl border border-white/20 relative"
+          style={{ background: '#000000' }}
+        >
+          {showShare && (
+            <Button
+              variant="ghost"
+              size="md"
+              onClick={handleShare}
+              className="absolute top-4 right-4 text-sm border border-white/20 hover:text-white/80 transition-colors"
+            >
+              {shareClicked ? 'Link Copied ✓' : 'Share ↗'}
+            </Button>
+          )}
           {!imageError && entry.image && (
             <div className="w-16 aspect-square border border-white/20 rounded-lg overflow-hidden">
               <Image
@@ -173,103 +208,7 @@ export function EntryCard({ entry }: EntryCardProps) {
 
         {/* Middle column - Combined Economics */}
         <Card className="p-4 relative" style={{ background: '#000000' }}>
-          {/* Title with container effect */}
-          <div className="relative mb-6">
-            <Separator
-              orientation="horizontal"
-              decorative
-              className="absolute"
-              style={{
-                backgroundColor: 'white',
-                opacity: '1',
-                height: '1px',
-                width: 'calc(100% + 2rem)',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                left: '-1rem',
-              }}
-            />
-            <div className="flex justify-center">
-              <Text variant="h3" className="relative px-4 mx-auto" style={{ background: '#000000' }}>
-                Vault Overview
-              </Text>
-            </div>
-          </div>
-
-          {/* Vertical separator */}
-          <Separator
-            orientation="vertical"
-            decorative
-            className="absolute"
-            style={{
-              left: '50%',
-              transform: 'translateX(-50%)',
-              backgroundColor: 'white',
-              opacity: '1',
-              width: '1px',
-              top: '3rem',
-              height: 'calc(100% - 3rem)',
-            }}
-          />
-
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Text variant="caption">Total Assets</Text>
-              <Text variant="body">
-                {formatValue(BigInt(stats?.vaultTotals?.totalAssets || '0'), false, false)} ETH
-              </Text>
-              <Text variant="caption">Total Shares</Text>
-              <Text variant="body">{formatValue(BigInt(stats?.vaultTotals?.totalShares || '0'), true, false)}</Text>
-              <Text variant="caption">Share Price</Text>
-              <Text variant="body">{formatValue(BigInt(stats?.sharePrice || '0'), false, false)} : 1</Text>
-            </div>
-            <div className="text-right">
-              <Text variant="caption">Your Assets</Text>
-              <Text variant="body">{formatValue(BigInt(stats?.userState?.assets || '0'), false, false)} ETH</Text>
-              <Text variant="caption">Your Shares</Text>
-              <Text variant="body">{formatValue(BigInt(stats?.userState?.shares || '0'), true, false)}</Text>
-              <Text variant="caption">Your Ownership</Text>
-              <Text variant="body">{ownershipPercentageShares.toFixed(2)}%</Text>
-            </div>
-          </div>
-
-          <div className="flex justify-between items-center w-full mt-4">
-            <div className="flex items-center gap-2">
-              <Text variant="caption">Shares</Text>
-              <PieChart variant="forVsAgainst" size="sm" percentage={ownershipPercentageShares} />
-              <Text variant="caption">{ownershipPercentageShares.toFixed(2)}%</Text>
-            </div>
-            <div className="flex items-center gap-2">
-              <Text variant="caption">{ownershipPercentageAssets.toFixed(2)}%</Text>
-              <PieChart variant="forVsAgainst" size="sm" percentage={ownershipPercentageAssets} />
-              <Text variant="caption">Assets</Text>
-            </div>
-          </div>
-
-          <div className="flex justify-between gap-2 mt-4">
-            <Button
-              variant="primary"
-              size="md"
-              onClick={() => {
-                setSwapType('deposit')
-                setShowSwapModal(true)
-              }}
-            >
-              Deposit
-            </Button>
-            <Button
-              variant="secondary"
-              size="md"
-              onClick={() => {
-                setSwapType('redeem')
-                setShowSwapModal(true)
-              }}
-            >
-              Redeem
-            </Button>
-          </div>
-
-          {showSwapModal && primaryWallet && (
+          {showSwapModal && primaryWallet ? (
             <SwapModal
               type={swapType}
               atomId={entry.id}
@@ -281,6 +220,108 @@ export function EntryCard({ entry }: EntryCardProps) {
               onClose={() => setShowSwapModal(false)}
               onSuccess={handleSwapSuccess}
             />
+          ) : (
+            <>
+              {/* Title with container effect */}
+              <div className="relative mb-6">
+                <Separator
+                  orientation="horizontal"
+                  decorative
+                  className="absolute"
+                  style={{
+                    backgroundColor: 'white',
+                    opacity: '1',
+                    height: '1px',
+                    width: 'calc(100% + 2rem)',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    left: '-1rem',
+                  }}
+                />
+                <div className="flex justify-center">
+                  <Text variant="h3" className="relative px-4 mx-auto" style={{ background: '#000000' }}>
+                    Vault Overview
+                  </Text>
+                </div>
+              </div>
+
+              {/* Vertical separator */}
+              <Separator
+                orientation="vertical"
+                decorative
+                className="absolute"
+                style={{
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  backgroundColor: 'white',
+                  opacity: '1',
+                  width: '1px',
+                  top: '3rem',
+                  height: 'calc(100% - 3rem)',
+                }}
+              />
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Text variant="caption">Total Assets</Text>
+                  <Text variant="body">
+                    {formatValue(BigInt(stats?.vaultTotals?.totalAssets || '0'), false, false)} ETH
+                  </Text>
+                  <Text variant="caption">Total Shares</Text>
+                  <Text variant="body">{formatValue(BigInt(stats?.vaultTotals?.totalShares || '0'), true, false)}</Text>
+                  <Text variant="caption">Share Price</Text>
+                  <Text variant="body">{formatValue(BigInt(stats?.sharePrice || '0'), false, false)} : 1</Text>
+                </div>
+                <div className="text-right">
+                  <Text variant="caption">Your Assets</Text>
+                  <Text variant="body">{formatValue(BigInt(stats?.userState?.assets || '0'), false, false)} ETH</Text>
+                  <Text variant="caption">Your Shares</Text>
+                  <Text variant="body">{formatValue(BigInt(stats?.userState?.shares || '0'), true, false)}</Text>
+                  <Text variant="caption">Your Ownership</Text>
+                  <Text variant="body">{ownershipPercentageShares.toFixed(2)}%</Text>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center w-full mt-4">
+                <div className="flex items-center gap-2">
+                  <Text variant="caption">Shares</Text>
+                  <PieChart variant="forVsAgainst" size="sm" percentage={ownershipPercentageShares} />
+                  <Text variant="caption">{ownershipPercentageShares.toFixed(2)}%</Text>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Text variant="caption">{ownershipPercentageAssets.toFixed(2)}%</Text>
+                  <PieChart variant="forVsAgainst" size="sm" percentage={ownershipPercentageAssets} />
+                  <Text variant="caption">Assets</Text>
+                </div>
+              </div>
+
+              <div className="flex justify-between gap-2 mt-4">
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setSwapType('deposit')
+                    setShowSwapModal(true)
+                  }}
+                >
+                  Deposit
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="md"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setSwapType('redeem')
+                    setShowSwapModal(true)
+                  }}
+                >
+                  Redeem
+                </Button>
+              </div>
+            </>
           )}
         </Card>
       </div>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core'
 import { isEthereumWallet } from '@dynamic-labs/ethereum'
 import { encodeFunctionData, parseEther } from 'viem'
-import { Card, Button, Input, Text } from '@0xintuition/1ui'
+import { Button, Input, Text } from '@0xintuition/1ui'
 import { formatValue } from '@/lib/formatValue'
 import { MULTIVAULT_ABI } from '@/lib/contracts'
 import { clientEnv } from '@/lib/env'
@@ -152,146 +152,127 @@ export function SwapModal({
   }
 
   return (
-    <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center">
-      <button onClick={onClose} className="fixed inset-0 bg-black/50" aria-label="Close dialog" />
-      <div className="relative w-[33.333%]">
-        <Card className="p-2" style={{ background: '#000000', border: '1px solid rgba(255, 255, 255, 0.2)' }}>
-          <form
-            onSubmit={handleSubmit}
-            className="p-4 space-y-4 rounded-xl border border-white/20"
-            style={{ background: '#000000' }}
-          >
-            <div className="flex justify-between items-center">
-              <Text variant="h3">{type === 'deposit' ? 'Deposit ETH' : 'Redeem Shares'}</Text>
-              <button type="button" onClick={onClose} className="text-white/50 hover:text-white">
-                ✕
-              </button>
-            </div>
-
-            {/* Input Section */}
-            <div>
-              <div className="flex justify-between mb-2">
-                <Text variant="caption">Amount</Text>
-                <Text variant="caption">
-                  Balance:{' '}
-                  {type === 'deposit'
-                    ? `${formatValue(BigInt(userEthBalance))} ETH`
-                    : formatValue(BigInt(userShares), true)}
-                </Text>
-              </div>
-
-              {type === 'deposit' && (
-                <div className="flex gap-2 mb-2">
-                  {QUICK_AMOUNTS.map((quickAmount) => (
-                    <button
-                      key={quickAmount}
-                      type="button"
-                      onClick={() => setAmount(quickAmount)}
-                      className="text-xs px-2 py-1 bg-gray-100/10 rounded hover:bg-gray-100/20"
-                    >
-                      {quickAmount}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {type === 'redeem' && (
-                <div className="flex gap-2 mb-2">
-                  <button
-                    type="button"
-                    onClick={() => setAmount((BigInt(userShares) / BigInt(2)).toString())}
-                    className="text-xs px-2 py-1 bg-gray-100/10 rounded hover:bg-gray-100/20"
-                  >
-                    50%
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAmount(userShares)}
-                    className="text-xs px-2 py-1 bg-gray-100/10 rounded hover:bg-gray-100/20"
-                  >
-                    100%
-                  </button>
-                </div>
-              )}
-
-              <Input
-                type="text"
-                pattern="^\d*\.?\d{0,18}$"
-                placeholder="0.0"
-                value={amount}
-                onChange={handleAmountChange}
-                className="bg-gray-100/5 border-gray-100/20"
-              />
-              <div className="flex justify-center mt-1">
-                <Text variant="caption">{type === 'deposit' ? 'ETH' : 'Shares'}</Text>
-              </div>
-            </div>
-
-            {/* Arrow */}
-            <div className="flex justify-center">
-              <Text variant="caption">↓</Text>
-            </div>
-
-            {/* Output Section */}
-            <div>
-              <Input
-                type="text"
-                readOnly
-                value={
-                  isCalculating
-                    ? '...'
-                    : estimatedOutput
-                    ? type === 'deposit'
-                      ? formatValue(BigInt(estimatedOutput), true)
-                      : formatValue(BigInt(estimatedOutput))
-                    : '0.0'
-                }
-                className="bg-gray-100/5 border-gray-100/20"
-              />
-              <div className="flex justify-center mt-1">
-                <Text variant="caption">{type === 'deposit' ? 'Shares' : 'ETH'}</Text>
-              </div>
-            </div>
-
-            {/* Stats */}
-            <div className="space-y-1 border-t border-white/20 pt-4">
-              <div className="flex justify-between">
-                <Text variant="caption">Current Share Price:</Text>
-                <Text variant="caption">{formatValue(BigInt(sharePrice))} : 1</Text>
-              </div>
-              <div className="flex justify-between">
-                <Text variant="caption">Assets In Pool:</Text>
-                <Text variant="caption">{formatValue(BigInt(totalAssets))} ETH</Text>
-              </div>
-              <div className="flex justify-between">
-                <Text variant="caption">Shares In Pool:</Text>
-                <Text variant="caption">{formatValue(BigInt(totalShares), true)}</Text>
-              </div>
-            </div>
-
-            {error && (
-              <Text variant="caption" className="text-red-500 text-center">
-                {error}
-              </Text>
-            )}
-
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isSubmitting || isCalculating || !amount || !validateAmount(amount)}
-              variant={type === 'deposit' ? 'primary' : 'secondary'}
-            >
-              {isSubmitting
-                ? 'Processing...'
-                : isCalculating
-                ? 'Calculating...'
-                : type === 'deposit'
-                ? 'Deposit'
-                : 'Redeem'}
-            </Button>
-          </form>
-        </Card>
+    <form onSubmit={handleSubmit} className="space-y-4" style={{ background: '#000000' }}>
+      <div className="flex justify-between items-center">
+        <Text variant="h3">{type === 'deposit' ? 'Deposit ETH' : 'Redeem Shares'}</Text>
+        <button type="button" onClick={onClose} className="text-white/50 hover:text-white">
+          ✕
+        </button>
       </div>
-    </div>
+
+      {/* Input Section */}
+      <div>
+        <div className="flex justify-between mb-2">
+          <Text variant="caption">Amount</Text>
+          <Text variant="caption">
+            Balance:{' '}
+            {type === 'deposit' ? `${formatValue(BigInt(userEthBalance))} ETH` : formatValue(BigInt(userShares), true)}
+          </Text>
+        </div>
+
+        {type === 'deposit' && (
+          <div className="flex gap-2 mb-2">
+            {QUICK_AMOUNTS.map((quickAmount) => (
+              <button
+                key={quickAmount}
+                type="button"
+                onClick={() => setAmount(quickAmount)}
+                className="text-xs px-2 py-1 bg-gray-100/10 rounded hover:bg-gray-100/20"
+              >
+                {quickAmount}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {type === 'redeem' && (
+          <div className="flex gap-2 mb-2">
+            <button
+              type="button"
+              onClick={() => setAmount((BigInt(userShares) / BigInt(2)).toString())}
+              className="text-xs px-2 py-1 bg-gray-100/10 rounded hover:bg-gray-100/20"
+            >
+              50%
+            </button>
+            <button
+              type="button"
+              onClick={() => setAmount(userShares)}
+              className="text-xs px-2 py-1 bg-gray-100/10 rounded hover:bg-gray-100/20"
+            >
+              100%
+            </button>
+          </div>
+        )}
+
+        <Input
+          type="text"
+          pattern="^\d*\.?\d{0,18}$"
+          placeholder="0.0"
+          value={amount}
+          onChange={handleAmountChange}
+          className="bg-gray-100/5 border-gray-100/20"
+        />
+        <div className="flex justify-center mt-1">
+          <Text variant="caption">{type === 'deposit' ? 'ETH' : 'Shares'}</Text>
+        </div>
+      </div>
+
+      {/* Arrow */}
+      <div className="flex justify-center">
+        <Text variant="caption">↓</Text>
+      </div>
+
+      {/* Output Section */}
+      <div>
+        <Input
+          type="text"
+          readOnly
+          value={
+            isCalculating
+              ? '...'
+              : estimatedOutput
+              ? type === 'deposit'
+                ? formatValue(BigInt(estimatedOutput), true)
+                : formatValue(BigInt(estimatedOutput))
+              : '0.0'
+          }
+          className="bg-gray-100/5 border-gray-100/20"
+        />
+        <div className="flex justify-center mt-1">
+          <Text variant="caption">{type === 'deposit' ? 'Shares' : 'ETH'}</Text>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="space-y-1 border-t border-white/20 pt-4">
+        <div className="flex justify-between">
+          <Text variant="caption">Current Share Price:</Text>
+          <Text variant="caption">{formatValue(BigInt(sharePrice))} : 1</Text>
+        </div>
+        <div className="flex justify-between">
+          <Text variant="caption">Assets In Pool:</Text>
+          <Text variant="caption">{formatValue(BigInt(totalAssets))} ETH</Text>
+        </div>
+        <div className="flex justify-between">
+          <Text variant="caption">Shares In Pool:</Text>
+          <Text variant="caption">{formatValue(BigInt(totalShares), true)}</Text>
+        </div>
+      </div>
+
+      {error && (
+        <Text variant="caption" className="text-red-500 text-center">
+          {error}
+        </Text>
+      )}
+
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={isSubmitting || isCalculating || !amount || !validateAmount(amount)}
+        variant={type === 'deposit' ? 'primary' : 'secondary'}
+      >
+        {isSubmitting ? 'Processing...' : isCalculating ? 'Calculating...' : type === 'deposit' ? 'Deposit' : 'Redeem'}
+      </Button>
+    </form>
   )
 }
