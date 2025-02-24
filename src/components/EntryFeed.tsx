@@ -4,7 +4,6 @@ import {
   Button,
   Text,
   Command,
-  CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
@@ -82,7 +81,11 @@ export function EntryFeed({ initialEntries }: EntryFeedProps) {
   )
 
   useEffect(() => {
-    performSearch(searchQuery)
+    if (searchQuery) {
+      performSearch(searchQuery)
+    } else {
+      setSearchResults([])
+    }
     return () => performSearch.cancel()
   }, [searchQuery, performSearch])
 
@@ -151,31 +154,40 @@ export function EntryFeed({ initialEntries }: EntryFeedProps) {
           <div className="h-px bg-gray-200 my-4" />
 
           <div>
-            <Command className="rounded-lg border shadow-sm">
+            <style jsx global>{`
+              [cmdk-item][aria-selected='true'] {
+                background: rgb(31 41 55) !important;
+                color: rgb(255 255 255) !important;
+              }
+            `}</style>
+            <Command className="rounded-lg border shadow-sm" shouldFilter={false}>
               <CommandInput placeholder="Search entries..." value={searchQuery} onValueChange={setSearchQuery} />
               <CommandList>
-                {isSearching ? (
-                  <CommandEmpty>Searching...</CommandEmpty>
-                ) : searchQuery ? (
-                  searchResults.length > 0 ? (
-                    <CommandGroup heading="Search Results">
-                      {searchResults.map((entry) => (
-                        <CommandItem key={entry.id} onSelect={() => router.push(`/entry/${entry.id}`)}>
-                          <div className="flex flex-col">
-                            <Text variant="body">{entry.name}</Text>
-                            {entry.description && entry.description !== entry.name && (
-                              <Text variant="caption" className="text-gray-500">
-                                {entry.description}
-                              </Text>
-                            )}
-                          </div>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  ) : (
-                    <CommandEmpty>No entries found.</CommandEmpty>
-                  )
-                ) : null}
+                <CommandGroup>
+                  {isSearching && <CommandItem disabled>Searching...</CommandItem>}
+                  {searchResults.map((entry) => (
+                    <CommandItem
+                      key={entry.id}
+                      value={entry.id}
+                      onSelect={() => {
+                        router.push(`/entry/${entry.id}`)
+                        setSearchQuery('')
+                      }}
+                    >
+                      <div className="flex flex-col">
+                        <Text variant="body">{entry.name}</Text>
+                        {entry.description && entry.description !== entry.name && (
+                          <Text variant="caption" className="text-gray-500">
+                            {entry.description}
+                          </Text>
+                        )}
+                      </div>
+                    </CommandItem>
+                  ))}
+                  {!isSearching && searchQuery && searchResults.length === 0 && (
+                    <CommandItem disabled>No results found</CommandItem>
+                  )}
+                </CommandGroup>
               </CommandList>
             </Command>
           </div>
