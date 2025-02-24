@@ -133,5 +133,6 @@ export async function searchEntries(searchStr: string): Promise<SearchResult[]> 
     })
     .map(item => item.result)
 
-  return results
+  // Return up to 5 so the user doesn't feel like they are DDoSing the system
+  return results.slice(0, 5)
 } 
