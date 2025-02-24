@@ -143,7 +143,7 @@ export function EntryCard({ entry, showShare = false, truncate = true }: EntryCa
           linear-gradient(to left, transparent 0%, rgba(144, 155, 207, 0.12) 100%, transparent 5%)`,
       }}
     >
-      {/* Main grid container with 3:1:1 ratio */}
+      {/* Main grid container with 3:1 ratio */}
       <div className="grid w-full" style={{ gridTemplateColumns: '3fr 1fr', gap: '2rem' }}>
         {/* Left column - Atom Info Section */}
         <div
@@ -173,8 +173,8 @@ export function EntryCard({ entry, showShare = false, truncate = true }: EntryCa
             </div>
           )}
           <h1>
-            {truncate ? entry.name.slice(0, 20) : entry.name}
-            {truncate && entry.name.length > 20 ? '...' : ''}
+            {truncate ? entry.name.slice(0, 40) : entry.name}
+            {truncate && entry.name.length > 40 ? '...' : ''}
           </h1>
           <p>
             {truncate ? entry.description.slice(0, 100) : entry.description}
@@ -207,7 +207,8 @@ export function EntryCard({ entry, showShare = false, truncate = true }: EntryCa
                   )
                 }}
               >
-                {entry.url} ↗
+                {truncate ? entry.url.slice(0, 40) : entry.url}
+                {truncate && entry.url.length > 40 ? '...' : ''} ↗
               </Button>
             </div>
           )}
