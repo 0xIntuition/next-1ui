@@ -2,14 +2,15 @@
 
 import { Badge, Button, Text } from '@0xintuition/1ui';
 
+// Mainly demonstrates that components are using the styles from 1ui
 export default function Home() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-4xl font-bold mb-4">
         Welcome to Intuition Next.js Template
       </h1>
-      <p className="mb-4">This template is set up with:</p>
-      <ul className="list-disc list-inside mb-4">
+      <p className="mb-4 text-sky-400 py-12">This template is set up with:</p>
+      <ul>
         <li>Next.js 14</li>
         <li>Tailwind CSS</li>
         <li>@0xintuition/1ui components</li>
