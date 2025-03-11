@@ -1,0 +1,47 @@
+query AtomDetails($id: numeric!, $userPositionAddress: String!, $verifiedPositionAddress: String!) {
+  atom(id: $id) {
+    id
+    vault_id
+    label
+    wallet_id
+    image
+    type
+    block_timestamp
+    data
+    creator {
+      id
+    }
+    value {
+      thing {
+        name
+        description
+        url
+      }
+    }
+    vault {
+      current_share_price
+      total_shares
+      position_count
+      verifiedPosition: positions(limit: 1, where: { account_id: { _eq: $verifiedPositionAddress } }) {
+        shares
+        account_id
+      }
+      userPosition: positions(limit: 1, where: { account_id: { _eq: $userPositionAddress } }) {
+        shares
+        account_id
+      }
+    }
+    tags: as_subject_triples_aggregate(where: { predicate_id: { _in: [3] } }) {
+      nodes {
+        object {
+          label
+          vault_id
+        }
+        predicate_id
+      }
+      aggregate {
+        count
+      }
+    }
+  }
+}

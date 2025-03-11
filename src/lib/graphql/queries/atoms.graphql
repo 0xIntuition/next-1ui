@@ -1,0 +1,53 @@
+query AtomsWithTags(
+  $where: atoms_bool_exp
+  $orderBy: [atoms_order_by!]
+  $address: String
+  $tagPredicateIds: [numeric!]
+  $userPositionAddress: String
+  $verifiedPositionAddress: String
+) {
+  atoms(where: $where, order_by: $orderBy) {
+    id
+    vault_id
+    label
+    wallet_id
+    image
+    type
+    block_timestamp
+    data
+    creator {
+      id
+    }
+    value {
+      thing {
+        name
+        description
+        url
+      }
+    }
+    vault {
+      current_share_price
+      total_shares
+      position_count
+      # Verified positions based on provided address
+      verifiedPosition: positions(limit: 1, where: { account_id: { _eq: $verifiedPositionAddress } }) {
+        shares
+        account_id
+      }
+    }
+    # Tags with flexible predicate filtering
+    tags: as_subject_triples_aggregate(where: { predicate_id: { _in: $tagPredicateIds } }) {
+      nodes {
+        object {
+          label
+          vault_id
+        }
+        # Include predicate_id for reference
+        predicate_id
+      }
+      aggregate {
+        count
+      }
+    }
+  }
+}
