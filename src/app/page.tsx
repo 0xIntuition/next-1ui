@@ -92,6 +92,12 @@ export default function Home() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-4xl font-bold mb-4">Welcome to Intuition Next.js Template</h1>
+      <p className="text-lg mb-4">
+        The following query demonstrates querying atoms with multiple querying parameters that can be optionally
+        combined to narrow down the results. "Give me all the atoms that have the tag "base" and are optionally tagged
+        with "ai" or "defi". Included in the response do a sub-query to check if the selected address has a position on
+        the atom.
+      </p>
 
       {/* Search and filter controls */}
       <div className="mb-6 space-y-4">
