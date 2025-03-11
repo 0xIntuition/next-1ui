@@ -37,8 +37,8 @@ export default function Home() {
         _and: [
           {
             as_subject_triples: {
-              predicate_id: { _eq: '3' },
-              object_id: { _eq: '16763' },
+              predicate_id: { _eq: '3' }, // has tag
+              object_id: { _eq: '16763' }, // base
             },
           },
           searchQuery
@@ -53,16 +53,16 @@ export default function Home() {
             ? {
                 as_subject_triples: {
                   object: {
-                    vault_id: { _in: selectedTags },
+                    vault_id: { _in: selectedTags }, // ai, defi, etc.
                   },
                 },
               }
             : {},
         ],
       },
-      tagPredicateIds: ['3'], // dev - has tag predicate ID
-      orderBy: [{ vault: { total_shares: 'desc' } }],
-      verifiedPositionAddress: SELECTED_ADDRESS,
+      tagPredicateIds: ['3'], // has tag predicate ID
+      orderBy: [{ vault: { total_shares: 'desc' } }], // sort by TVL
+      verifiedPositionAddress: SELECTED_ADDRESS, // address to check for verified positions
     },
     {
       queryKey: ['AtomsWithTags', SELECTED_ADDRESS, selectedTags, searchQuery],
